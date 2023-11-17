@@ -56,6 +56,7 @@ add_node_config() {
             \"Timeout\": 4,
             \"ListenIP\": \"0.0.0.0\",
             \"SendIP\": \"0.0.0.0\",
+            \"DeviceOnlineMinTraffic\": 100,
             \"EnableProxyProtocol\": false,
             \"EnableUot\": true,
             \"EnableTFO\": true,
@@ -200,10 +201,6 @@ EOF
             }
         },
         {
-            "tag": "direct",
-            "protocol": "freedom"
-        },
-        {
             "protocol": "blackhole",
             "tag": "block"
         }
@@ -219,15 +216,7 @@ EOF
                 "type": "field",
                 "outboundTag": "block",
                 "ip": [
-                    "geoip:private",
-                    "58.87.70.69"
-                ]
-            },
-            {
-                "type": "field",
-                "outboundTag": "direct",
-                "domain": [
-                    "domain:zgovps.com"
+                    "geoip:private"
                 ]
             },
             {
@@ -275,11 +264,6 @@ EOF
                 "protocol": [
                     "bittorrent"
                 ]
-            },
-            {
-                "type": "field",
-                "outboundTag": "block",
-                "port": "23,24,25,107,194,445,465,587,992,3389,6665-6669,6679,6697,6881-6999,7000"
             }
         ]
     }
