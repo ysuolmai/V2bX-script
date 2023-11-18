@@ -397,27 +397,55 @@ add_node_config() {
         7 ) NodeType="trojan" ;;
         * ) NodeType="shadowsocks" ;;
     esac
+    certmode="none"
+    read -rp "请选择是否进行TLS配置？(y/n)" istls
+        if [ "$istls" = "y" ] || [ "$istls" = "Y" ]; then
+            echo -e "${yellow}请选择证书申请模式：${plain}"
+            echo -e "${green}1. http${plain}"
+            echo -e "${green}2. dns${plain}"
+            echo -e "${green}3. self${plain}"
+            read -rp "请输入：" certmode
+            case "$certmode" in
+                1 ) certmode="http" ;;
+                2 ) certmode="dns" ;;
+                3 ) certmode="self" ;;
+            esac
+            echo -e "${red}请添加节点后手动修改配置文件！${plain}"
+        fi
 
-    nodes_config+=(
-        {
-            \"Core\": \"$core\",
-            \"ApiHost\": \"$ApiHost\",
-            \"ApiKey\": \"$ApiKey\",
-            \"NodeID\": $NodeID,
-            \"NodeType\": \"$NodeType\",
-            \"Timeout\": 4,
-            \"ListenIP\": \"0.0.0.0\",
-            \"SendIP\": \"0.0.0.0\",
-            \"DeviceOnlineMinTraffic\": 100,
-            \"EnableProxyProtocol\": false,
-            \"EnableUot\": true,
-            \"EnableTFO\": true,
-            \"DNSType\": \"UseIPv4\"
+    node_config=$(cat <<EOF
+{
+        "Core": "$core",
+        "ApiHost": "$ApiHost",
+        "ApiKey": "$ApiKey",
+        "NodeID": $NodeID,
+        "NodeType": "$NodeType",
+        "Timeout": 30,
+        "ListenIP": "0.0.0.0",
+        "SendIP": "0.0.0.0",
+        "DeviceOnlineMinTraffic": 100,
+        "EnableProxyProtocol": false,
+        "EnableUot": true,
+        "EnableTFO": true,
+        "DNSType": "UseIPv4",
+        "CertConfig": {
+            "CertMode": "$certmode",
+            "RejectUnknownSni": false,
+            "CertDomain": "example.com",
+            "CertFile": "/etc/V2bX/tls/example.crt",
+            "KeyFile": "/etc/V2bX/tls/example.key",
+            "Email": "1@test.com",
+            "Provider": "cloudflare",
+            "DNSEnv": {
+              "EnvName": "env1"
+            }
         }
-    )
-    nodes_config+=(",")
+    },
+EOF
+)
+    nodes_config+=("$node_config")
 }
-    
+
 
 generate_config_file() {
     echo -e "${yellow}V2bX 配置文件生成向导${plain}"
@@ -465,55 +493,52 @@ generate_config_file() {
     # 根据核心类型生成 Cores
     if [ "$core_xray" = true ] && [ "$core_sing" = true ]; then
         cores_config="[
-        {
-            \"Type\": \"xray\",
-            \"Log\": {
-                \"Level\": \"error\",
-                \"ErrorPath\": \"/etc/V2bX/error.log\"
-            },
-            \"OutboundConfigPath\": \"/etc/V2bX/custom_outbound.json\",
-            \"RouteConfigPath\": \"/etc/V2bX/route.json\"
+    {
+        \"Type\": \"xray\",
+        \"Log\": {
+            \"Level\": \"error\",
+            \"ErrorPath\": \"/etc/V2bX/error.log\"
         },
-        {
-            \"Type\": \"sing\",
-            \"Log\": {
-                \"Level\": \"error\",
-                \"Timestamp\": true
-            },
-            \"NTP\": {
-                \"Enable\": true,
-                \"Server\": \"time.apple.com\",
-                \"ServerPort\": 0
-            }
+        \"OutboundConfigPath\": \"/etc/V2bX/custom_outbound.json\",
+        \"RouteConfigPath\": \"/etc/V2bX/route.json\"
+    },
+    {
+        \"Type\": \"sing\",
+        \"Log\": {
+            \"Level\": \"error\",
+            \"Timestamp\": true
+        },
+        \"NTP\": {
+            \"Enable\": true,
+            \"Server\": \"time.apple.com\",
+            \"ServerPort\": 0
         }
-        ]"
+    }]"
     elif [ "$core_xray" = true ]; then
         cores_config="[
-        {
-            \"Type\": \"xray\",
-            \"Log\": {
-                \"Level\": \"error\",
-                \"ErrorPath\": \"/etc/V2bX/error.log\"
-            },
-            \"OutboundConfigPath\": \"/etc/V2bX/custom_outbound.json\",
-            \"RouteConfigPath\": \"/etc/V2bX/route.json\"
-        }
-        ]"
+    {
+        \"Type\": \"xray\",
+        \"Log\": {
+            \"Level\": \"error\",
+            \"ErrorPath\": \"/etc/V2bX/error.log\"
+        },
+        \"OutboundConfigPath\": \"/etc/V2bX/custom_outbound.json\",
+        \"RouteConfigPath\": \"/etc/V2bX/route.json\"
+    }]"
     elif [ "$core_sing" = true ]; then
         cores_config="[
-        {
-            \"Type\": \"sing\",
-            \"Log\": {
-                \"Level\": \"error\",
-                \"Timestamp\": true
-            },
-            \"NTP\": {
-                \"Enable\": true,
-                \"Server\": \"time.apple.com\",
-                \"ServerPort\": 0
-            }
+    {
+        \"Type\": \"sing\",
+        \"Log\": {
+            \"Level\": \"error\",
+            \"Timestamp\": true
+        },
+        \"NTP\": {
+            \"Enable\": true,
+            \"Server\": \"time.apple.com\",
+            \"ServerPort\": 0
         }
-        ]"
+    }]"
     fi
 
     # 切换到配置文件目录
@@ -521,18 +546,19 @@ generate_config_file() {
     
     # 备份旧的配置文件
     mv config.json config.json.bak
-    formatted_nodes_config=$(echo "${nodes_config[*]}" | sed 's/,\s*$//')
-    
+    nodes_config_str="${nodes_config[*]}"
+    formatted_nodes_config="${nodes_config_str%,}"
+
     # 创建 config.json 文件
     cat <<EOF > /etc/V2bX/config.json
-    {
-        "Log": {
-            "Level": "error",
-            "Output": ""
-        },
-        "Cores": $cores_config,
-        "Nodes": [$formatted_nodes_config]
-    }
+{
+    "Log": {
+        "Level": "error",
+        "Output": ""
+    },
+    "Cores": $cores_config,
+    "Nodes": [$formatted_nodes_config]
+}
 EOF
     
     # 创建 custom_outbound.json 文件
@@ -690,10 +716,11 @@ show_menu() {
   ${green}14.${plain} 升级 V2bX 维护脚本
   ${green}15.${plain} 生成 V2bX 配置文件
   ${green}16.${plain} 放行 VPS 的所有网络端口
+  ${green}17.${plain} 退出脚本
  "
  #后续更新可加入上方字符串中
     show_status
-    echo && read -rp "请输入选择 [0-16]: " num
+    echo && read -rp "请输入选择 [0-17]: " num
 
     case "${num}" in
         0) config ;;
@@ -713,6 +740,7 @@ show_menu() {
         14) update_shell ;;
         15) generate_config_file ;;
         16) open_ports ;;
+        17) exit ;;
         *) echo -e "${red}请输入正确的数字 [0-16]${plain}" ;;
     esac
 }

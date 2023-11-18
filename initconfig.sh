@@ -45,25 +45,53 @@ add_node_config() {
         7 ) NodeType="trojan" ;;
         * ) NodeType="shadowsocks" ;;
     esac
+    certmode="none"
+    read -rp "请选择是否进行TLS配置？(y/n)" istls
+        if [ "$istls" = "y" ] || [ "$istls" = "Y" ]; then
+            echo -e "${yellow}请选择证书申请模式：${plain}"
+            echo -e "${green}1. http${plain}"
+            echo -e "${green}2. dns${plain}"
+            echo -e "${green}3. self${plain}"
+            read -rp "请输入：" certmode
+            case "$certmode" in
+                1 ) certmode="http" ;;
+                2 ) certmode="dns" ;;
+                3 ) certmode="self" ;;
+            esac
+            echo -e "${red}请添加节点后手动修改配置文件！${plain}"
+        fi
 
-    nodes_config+=(
-        {
-            \"Core\": \"$core\",
-            \"ApiHost\": \"$ApiHost\",
-            \"ApiKey\": \"$ApiKey\",
-            \"NodeID\": $NodeID,
-            \"NodeType\": \"$NodeType\",
-            \"Timeout\": 4,
-            \"ListenIP\": \"0.0.0.0\",
-            \"SendIP\": \"0.0.0.0\",
-            \"DeviceOnlineMinTraffic\": 100,
-            \"EnableProxyProtocol\": false,
-            \"EnableUot\": true,
-            \"EnableTFO\": true,
-            \"DNSType\": \"UseIPv4\"
+    node_config=$(cat <<EOF
+{
+        "Core": "$core",
+        "ApiHost": "$ApiHost",
+        "ApiKey": "$ApiKey",
+        "NodeID": $NodeID,
+        "NodeType": "$NodeType",
+        "Timeout": 30,
+        "ListenIP": "0.0.0.0",
+        "SendIP": "0.0.0.0",
+        "DeviceOnlineMinTraffic": 100,
+        "EnableProxyProtocol": false,
+        "EnableUot": true,
+        "EnableTFO": true,
+        "DNSType": "UseIPv4",
+        "CertConfig": {
+            "CertMode": "$certmode",
+            "RejectUnknownSni": false,
+            "CertDomain": "example.com",
+            "CertFile": "/etc/V2bX/tls/example.crt",
+            "KeyFile": "/etc/V2bX/tls/example.key",
+            "Email": "1@test.com",
+            "Provider": "cloudflare",
+            "DNSEnv": {
+              "EnvName": "env1"
+            }
         }
-    )
-    nodes_config+=(",")
+    },
+EOF
+)
+    nodes_config+=("$node_config")
 }
     
 
