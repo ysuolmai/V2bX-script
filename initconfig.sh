@@ -60,7 +60,9 @@ add_node_config() {
             esac
             echo -e "${red}请添加节点后手动修改配置文件！${plain}"
         fi
-
+    
+    node_config=""
+    if [ "$core_type" == "1" ]; then 
     node_config=$(cat <<EOF
 {
             "Core": "$core",
@@ -91,9 +93,40 @@ add_node_config() {
         },
 EOF
 )
+    elif [ "$core_type" == "2" ]; then
+    node_config=$(cat <<EOF
+{
+            "Core": "$core",
+            "ApiHost": "$ApiHost",
+            "ApiKey": "$ApiKey",
+            "NodeID": $NodeID,
+            "NodeType": "$NodeType",
+            "Timeout": 30,
+            "ListenIP": "0.0.0.0",
+            "SendIP": "0.0.0.0",
+            "DeviceOnlineMinTraffic": 100,
+            "EnableProxyProtocol": false,
+            "TCPFastOpen": true,
+            "SniffEnabled": true,
+            "EnableDNS": true,
+            "CertConfig": {
+                "CertMode": "$certmode",
+                "RejectUnknownSni": false,
+                "CertDomain": "example.com",
+                "CertFile": "/etc/V2bX/tls/example.crt",
+                "KeyFile": "/etc/V2bX/tls/example.key",
+                "Email": "1@test.com",
+                "Provider": "cloudflare",
+                "DNSEnv": {
+                    "EnvName": "env1"
+                }
+            }
+        },
+EOF
+)
+    fi
     nodes_config+=("$node_config")
 }
-
 
 generate_config_file() {
     echo -e "${yellow}V2bX 配置文件生成向导${plain}"
@@ -160,7 +193,8 @@ generate_config_file() {
                 \"Enable\": true,
                 \"Server\": \"time.apple.com\",
                 \"ServerPort\": 0
-            }
+            },
+            \"OriginalPath\": \"/etc/V2bX/sing_origin.json\"
         }]"
     elif [ "$core_xray" = true ]; then
         cores_config="[
@@ -185,7 +219,8 @@ generate_config_file() {
                 \"Enable\": true,
                 \"Server\": \"time.apple.com\",
                 \"ServerPort\": 0
-            }
+            },
+            \"OriginalPath\": \"/etc/V2bX/sing_origin.json\"
         }]"
     fi
 
@@ -294,13 +329,83 @@ EOF
         ]
     }
 EOF
-                
+
+    # 创建 sing_origin.json 文件           
+    cat <<EOF > /etc/V2bX/sing_origin.json
+{
+  "outbounds": [
+    {
+      "tag": "direct",
+      "type": "direct",
+      "domain_strategy": "prefer_ipv4"
+    },
+    {
+      "type": "block",
+      "tag": "block"
+    }
+  ],
+  "route": {
+    "rules": [
+      {
+        "outbound": "block",
+        "geoip": [
+          "private"
+        ]
+      },
+      {
+        "geosite": [
+          "cn"
+        ],
+        "outbound": "block"
+      },
+      {
+        "geoip": [
+          "cn"
+        ],
+        "outbound": "block"
+      },
+      {
+        "domain_regex": [
+            "(api|ps|sv|offnavi|newvector|ulog.imap|newloc)(.map|).(baidu|n.shifen).com",
+            "(.+.|^)(360|so).(cn|com)",
+            "(Subject|HELO|SMTP)",
+            "(torrent|.torrent|peer_id=|info_hash|get_peers|find_node|BitTorrent|announce_peer|announce.php?passkey=)",
+            "(^.@)(guerrillamail|guerrillamailblock|sharklasers|grr|pokemail|spam4|bccto|chacuo|027168).(info|biz|com|de|net|org|me|la)",
+            "(.?)(xunlei|sandai|Thunder|XLLiveUD)(.)",
+            "(..||)(dafahao|mingjinglive|botanwang|minghui|dongtaiwang|falunaz|epochtimes|ntdtv|falundafa|falungong|wujieliulan|zhengjian).(org|com|net)",
+            "(ed2k|.torrent|peer_id=|announce|info_hash|get_peers|find_node|BitTorrent|announce_peer|announce.php?passkey=|magnet:|xunlei|sandai|Thunder|XLLiveUD|bt_key)",
+            "(.+.|^)(360|speedtest|fast).(cn|com|net)",
+            "(.*.||)(guanjia.qq.com|qqpcmgr|QQPCMGR)",
+            "(.*.||)(rising|kingsoft|duba|xindubawukong|jinshanduba).(com|net|org)",
+            "(.*.||)(netvigator|torproject).(com|cn|net|org)",
+            "(..||)(visa|mycard|gov|gash|beanfun|bank).",
+            "(.*.||)(gov|12377|12315|talk.news.pts.org|creaders|zhuichaguoji|efcc.org|cyberpolice|aboluowang|tuidang|epochtimes|nytimes|zhengjian|110.qq|mingjingnews|inmediahk|xinsheng|breakgfw|chengmingmag|jinpianwang|qi-gong|mhradio|edoors|renminbao|soundofhope|xizang-zhiye|bannedbook|ntdtv|12321|secretchina|dajiyuan|boxun|chinadigitaltimes|dwnews|huaglad|oneplusnews|epochweekly|cn.rfi).(cn|com|org|net|club|net|fr|tw|hk|eu|info|me)",
+            "(.*.||)(miaozhen|cnzz|talkingdata|umeng).(cn|com)",
+            "(.*.||)(mycard).(com|tw)",
+            "(.*.||)(gash).(com|tw)",
+            "(.bank.)",
+            "(.*.||)(pincong).(rocks)",
+            "(.*.||)(taobao).(com)",
+            "(.*.||)(laomoe|jiyou|ssss|lolicp|vv1234|0z|4321q|868123|ksweb|mm126).(com|cloud|fun|cn|gs|xyz|cc)",
+            "(flows|miaoko).(pages).(dev)"
+        ],
+        "outbound": "block"
+      },
+      {
+        "outbound": "direct",
+        "network": [
+          "udp","tcp"
+        ]
+      }
+    ]
+  }
+}
+EOF
 
     echo -e "${green}V2bX 配置文件生成完成，正在重新启动 V2bX 服务${plain}"
     restart 0
     before_show_menu
 }
-
 install_bbr() {
     bash <(curl -L -s https://github.com/ylx2016/Linux-NetSpeed/raw/master/tcpx.sh)
 }
