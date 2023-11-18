@@ -415,32 +415,32 @@ add_node_config() {
 
     node_config=$(cat <<EOF
 {
-        "Core": "$core",
-        "ApiHost": "$ApiHost",
-        "ApiKey": "$ApiKey",
-        "NodeID": $NodeID,
-        "NodeType": "$NodeType",
-        "Timeout": 30,
-        "ListenIP": "0.0.0.0",
-        "SendIP": "0.0.0.0",
-        "DeviceOnlineMinTraffic": 100,
-        "EnableProxyProtocol": false,
-        "EnableUot": true,
-        "EnableTFO": true,
-        "DNSType": "UseIPv4",
-        "CertConfig": {
-            "CertMode": "$certmode",
-            "RejectUnknownSni": false,
-            "CertDomain": "example.com",
-            "CertFile": "/etc/V2bX/tls/example.crt",
-            "KeyFile": "/etc/V2bX/tls/example.key",
-            "Email": "1@test.com",
-            "Provider": "cloudflare",
-            "DNSEnv": {
-              "EnvName": "env1"
+            "Core": "$core",
+            "ApiHost": "$ApiHost",
+            "ApiKey": "$ApiKey",
+            "NodeID": $NodeID,
+            "NodeType": "$NodeType",
+            "Timeout": 30,
+            "ListenIP": "0.0.0.0",
+            "SendIP": "0.0.0.0",
+            "DeviceOnlineMinTraffic": 100,
+            "EnableProxyProtocol": false,
+            "EnableUot": true,
+            "EnableTFO": true,
+            "DNSType": "UseIPv4",
+            "CertConfig": {
+                "CertMode": "$certmode",
+                "RejectUnknownSni": false,
+                "CertDomain": "example.com",
+                "CertFile": "/etc/V2bX/tls/example.crt",
+                "KeyFile": "/etc/V2bX/tls/example.key",
+                "Email": "1@test.com",
+                "Provider": "cloudflare",
+                "DNSEnv": {
+                    "EnvName": "env1"
+                }
             }
-        }
-    },
+        },
 EOF
 )
     nodes_config+=("$node_config")
@@ -493,52 +493,52 @@ generate_config_file() {
     # 根据核心类型生成 Cores
     if [ "$core_xray" = true ] && [ "$core_sing" = true ]; then
         cores_config="[
-    {
-        \"Type\": \"xray\",
-        \"Log\": {
-            \"Level\": \"error\",
-            \"ErrorPath\": \"/etc/V2bX/error.log\"
+        {
+            \"Type\": \"xray\",
+            \"Log\": {
+                \"Level\": \"error\",
+                \"ErrorPath\": \"/etc/V2bX/error.log\"
+            },
+            \"OutboundConfigPath\": \"/etc/V2bX/custom_outbound.json\",
+            \"RouteConfigPath\": \"/etc/V2bX/route.json\"
         },
-        \"OutboundConfigPath\": \"/etc/V2bX/custom_outbound.json\",
-        \"RouteConfigPath\": \"/etc/V2bX/route.json\"
-    },
-    {
-        \"Type\": \"sing\",
-        \"Log\": {
-            \"Level\": \"error\",
-            \"Timestamp\": true
-        },
-        \"NTP\": {
-            \"Enable\": true,
-            \"Server\": \"time.apple.com\",
-            \"ServerPort\": 0
-        }
-    }]"
+        {
+            \"Type\": \"sing\",
+            \"Log\": {
+                \"Level\": \"error\",
+                \"Timestamp\": true
+            },
+            \"NTP\": {
+                \"Enable\": true,
+                \"Server\": \"time.apple.com\",
+                \"ServerPort\": 0
+            }
+        }]"
     elif [ "$core_xray" = true ]; then
         cores_config="[
-    {
-        \"Type\": \"xray\",
-        \"Log\": {
-            \"Level\": \"error\",
-            \"ErrorPath\": \"/etc/V2bX/error.log\"
-        },
-        \"OutboundConfigPath\": \"/etc/V2bX/custom_outbound.json\",
-        \"RouteConfigPath\": \"/etc/V2bX/route.json\"
-    }]"
+        {
+            \"Type\": \"xray\",
+            \"Log\": {
+                \"Level\": \"error\",
+                \"ErrorPath\": \"/etc/V2bX/error.log\"
+            },
+            \"OutboundConfigPath\": \"/etc/V2bX/custom_outbound.json\",
+            \"RouteConfigPath\": \"/etc/V2bX/route.json\"
+        }]"
     elif [ "$core_sing" = true ]; then
         cores_config="[
-    {
-        \"Type\": \"sing\",
-        \"Log\": {
-            \"Level\": \"error\",
-            \"Timestamp\": true
-        },
-        \"NTP\": {
-            \"Enable\": true,
-            \"Server\": \"time.apple.com\",
-            \"ServerPort\": 0
-        }
-    }]"
+        {
+            \"Type\": \"sing\",
+            \"Log\": {
+                \"Level\": \"error\",
+                \"Timestamp\": true
+            },
+            \"NTP\": {
+                \"Enable\": true,
+                \"Server\": \"time.apple.com\",
+                \"ServerPort\": 0
+            }
+        }]"
     fi
 
     # 切换到配置文件目录

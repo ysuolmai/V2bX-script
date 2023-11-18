@@ -63,37 +63,37 @@ add_node_config() {
 
     node_config=$(cat <<EOF
 {
-        "Core": "$core",
-        "ApiHost": "$ApiHost",
-        "ApiKey": "$ApiKey",
-        "NodeID": $NodeID,
-        "NodeType": "$NodeType",
-        "Timeout": 30,
-        "ListenIP": "0.0.0.0",
-        "SendIP": "0.0.0.0",
-        "DeviceOnlineMinTraffic": 100,
-        "EnableProxyProtocol": false,
-        "EnableUot": true,
-        "EnableTFO": true,
-        "DNSType": "UseIPv4",
-        "CertConfig": {
-            "CertMode": "$certmode",
-            "RejectUnknownSni": false,
-            "CertDomain": "example.com",
-            "CertFile": "/etc/V2bX/tls/example.crt",
-            "KeyFile": "/etc/V2bX/tls/example.key",
-            "Email": "1@test.com",
-            "Provider": "cloudflare",
-            "DNSEnv": {
-              "EnvName": "env1"
+            "Core": "$core",
+            "ApiHost": "$ApiHost",
+            "ApiKey": "$ApiKey",
+            "NodeID": $NodeID,
+            "NodeType": "$NodeType",
+            "Timeout": 30,
+            "ListenIP": "0.0.0.0",
+            "SendIP": "0.0.0.0",
+            "DeviceOnlineMinTraffic": 100,
+            "EnableProxyProtocol": false,
+            "EnableUot": true,
+            "EnableTFO": true,
+            "DNSType": "UseIPv4",
+            "CertConfig": {
+                "CertMode": "$certmode",
+                "RejectUnknownSni": false,
+                "CertDomain": "example.com",
+                "CertFile": "/etc/V2bX/tls/example.crt",
+                "KeyFile": "/etc/V2bX/tls/example.key",
+                "Email": "1@test.com",
+                "Provider": "cloudflare",
+                "DNSEnv": {
+                    "EnvName": "env1"
+                }
             }
-        }
-    },
+        },
 EOF
 )
     nodes_config+=("$node_config")
 }
-    
+
 
 generate_config_file() {
     echo -e "${yellow}V2bX 配置文件生成向导${plain}"
@@ -161,8 +161,7 @@ generate_config_file() {
                 \"Server\": \"time.apple.com\",
                 \"ServerPort\": 0
             }
-        }
-        ]"
+        }]"
     elif [ "$core_xray" = true ]; then
         cores_config="[
         {
@@ -173,8 +172,7 @@ generate_config_file() {
             },
             \"OutboundConfigPath\": \"/etc/V2bX/custom_outbound.json\",
             \"RouteConfigPath\": \"/etc/V2bX/route.json\"
-        }
-        ]"
+        }]"
     elif [ "$core_sing" = true ]; then
         cores_config="[
         {
@@ -188,8 +186,7 @@ generate_config_file() {
                 \"Server\": \"time.apple.com\",
                 \"ServerPort\": 0
             }
-        }
-        ]"
+        }]"
     fi
 
     # 切换到配置文件目录
@@ -197,18 +194,19 @@ generate_config_file() {
     
     # 备份旧的配置文件
     mv config.json config.json.bak
-    formatted_nodes_config=$(echo "${nodes_config[*]}" | sed 's/,\s*$//')
-    
+    nodes_config_str="${nodes_config[*]}"
+    formatted_nodes_config="${nodes_config_str%,}"
+
     # 创建 config.json 文件
     cat <<EOF > /etc/V2bX/config.json
-    {
-        "Log": {
-            "Level": "error",
-            "Output": ""
-        },
-        "Cores": $cores_config,
-        "Nodes": [$formatted_nodes_config]
-    }
+{
+    "Log": {
+        "Level": "error",
+        "Output": ""
+    },
+    "Cores": $cores_config,
+    "Nodes": [$formatted_nodes_config]
+}
 EOF
     
     # 创建 custom_outbound.json 文件
@@ -298,8 +296,9 @@ EOF
 EOF
                 
 
-    echo -e "${green}V2bX 配置文件生成完成,正在重新启动服务${plain}"
-    v2bx restart
+    echo -e "${green}V2bX 配置文件生成完成，正在重新启动 V2bX 服务${plain}"
+    restart 0
+    before_show_menu
 }
 
 install_bbr() {
