@@ -11,6 +11,9 @@ plain='\033[0m'
 # check os
 if [[ -f /etc/redhat-release ]]; then
     release="centos"
+elif cat /etc/issue | grep -Eqi "alpine"; then
+    release="alpine"
+    echo -e "${red}脚本暂不支持alpine系统！${plain}\n" && exit 1
 elif cat /etc/issue | grep -Eqi "debian"; then
     release="debian"
 elif cat /etc/issue | grep -Eqi "ubuntu"; then
@@ -38,6 +41,9 @@ fi
 if [[ x"${release}" == x"centos" ]]; then
     if [[ ${os_version} -le 6 ]]; then
         echo -e "${red}请使用 CentOS 7 或更高版本的系统！${plain}\n" && exit 1
+    fi
+    if [[ ${os_version} -eq 7 ]]; then
+        echo -e "${red}注意： CentOS 7 无法使用hysteria1/2协议！${plain}\n"
     fi
 elif [[ x"${release}" == x"ubuntu" ]]; then
     if [[ ${os_version} -lt 16 ]]; then
@@ -398,22 +404,32 @@ add_node_config() {
         7 ) NodeType="trojan" ;;
         * ) NodeType="shadowsocks" ;;
     esac
+    if [ $NodeType="vless" ];then
+        read -rp "请选择是否为reality节点？(y/n)" isreality
+    fi
     certmode="none"
-    read -rp "请选择是否进行TLS配置？(y/n)" istls
-        if [ "$istls" = "y" ] || [ "$istls" = "Y" ]; then
+    certdomain="example.com"
+    if [ "$isreality" != "y" ] || [ "$isreality" != "Y" ]; then
+        read -rp "请选择是否进行TLS配置？(y/n)" istls
+        if [ "$istls" == "y" ] || [ "$istls" == "Y" ]; then
             echo -e "${yellow}请选择证书申请模式：${plain}"
-            echo -e "${green}1. http${plain}"
-            echo -e "${green}2. dns${plain}"
-            echo -e "${green}3. self${plain}"
+            echo -e "${green}1. http模式自动申请，节点域名已正确解析${plain}"
+            echo -e "${green}2. dns模式自动申请，需填入正确域名服务商API参数${plain}"
+            echo -e "${green}3. self模式，自签证书或提供已有证书文件${plain}"
             read -rp "请输入：" certmode
             case "$certmode" in
                 1 ) certmode="http" ;;
                 2 ) certmode="dns" ;;
                 3 ) certmode="self" ;;
             esac
-            echo -e "${red}请添加节点后手动修改配置文件！${plain}"
+            if [ $certmode == "http"] || [ $certmode == "dns"]; then
+                read -rp "请输入节点证书域名(example.com)]：" certdomain
+            fi
+            if [ $certmode != "http"]
+                echo -e "${red}请手动修改配置文件后重启V2bX！${plain}"
+            fi
         fi
-    
+    fi
     node_config=""
     if [ "$core_type" == "1" ]; then 
     node_config=$(cat <<EOF
@@ -434,10 +450,10 @@ add_node_config() {
             "CertConfig": {
                 "CertMode": "$certmode",
                 "RejectUnknownSni": false,
-                "CertDomain": "example.com",
-                "CertFile": "/etc/V2bX/tls/example.crt",
-                "KeyFile": "/etc/V2bX/tls/example.key",
-                "Email": "1@test.com",
+                "CertDomain": "$certdomain",
+                "CertFile": "/etc/V2bX/fullchain.cer",
+                "KeyFile": "/etc/V2bX/cert.key",
+                "Email": "v2bx@github.com",
                 "Provider": "cloudflare",
                 "DNSEnv": {
                     "EnvName": "env1"
@@ -458,17 +474,16 @@ EOF
             "ListenIP": "0.0.0.0",
             "SendIP": "0.0.0.0",
             "DeviceOnlineMinTraffic": 100,
-            "EnableProxyProtocol": false,
             "TCPFastOpen": true,
             "SniffEnabled": true,
             "EnableDNS": true,
             "CertConfig": {
                 "CertMode": "$certmode",
                 "RejectUnknownSni": false,
-                "CertDomain": "example.com",
-                "CertFile": "/etc/V2bX/tls/example.crt",
-                "KeyFile": "/etc/V2bX/tls/example.key",
-                "Email": "1@test.com",
+                "CertDomain": "$certdomain",
+                "CertFile": "/etc/V2bX/fullchain.cer",
+                "KeyFile": "/etc/V2bX/cert.key",
+                "Email": "v2bx@github.com",
                 "Provider": "cloudflare",
                 "DNSEnv": {
                     "EnvName": "env1"
@@ -630,7 +645,15 @@ EOF
                 "type": "field",
                 "outboundTag": "block",
                 "ip": [
-                    "geoip:private"
+                    "geoip:private",
+                    "geoip:cn"
+                ]
+            },
+            {
+                "type": "field",
+                "outboundTag": "block",
+                "domain": [
+                    "geosite:cn"
                 ]
             },
             {
@@ -645,12 +668,12 @@ EOF
                     "regexp:(.?)(xunlei|sandai|Thunder|XLLiveUD)(.)",
                     "regexp:(..||)(dafahao|mingjinglive|botanwang|minghui|dongtaiwang|falunaz|epochtimes|ntdtv|falundafa|falungong|wujieliulan|zhengjian).(org|com|net)",
                     "regexp:(ed2k|.torrent|peer_id=|announce|info_hash|get_peers|find_node|BitTorrent|announce_peer|announce.php?passkey=|magnet:|xunlei|sandai|Thunder|XLLiveUD|bt_key)",
-                    "regexp:(.+.|^)(360|speedtest|fast).(cn|com|net)",
+                    "regexp:(.+.|^)(360).(cn|com|net)",
                     "regexp:(.*.||)(guanjia.qq.com|qqpcmgr|QQPCMGR)",
                     "regexp:(.*.||)(rising|kingsoft|duba|xindubawukong|jinshanduba).(com|net|org)",
                     "regexp:(.*.||)(netvigator|torproject).(com|cn|net|org)",
-                    "regexp:(..||)(visa|mycard|gov|gash|beanfun|bank).",
-                    "regexp:(.*.||)(gov|12377|12315|talk.news.pts.org|creaders|zhuichaguoji|efcc.org|cyberpolice|aboluowang|tuidang|epochtimes|nytimes|zhengjian|110.qq|mingjingnews|inmediahk|xinsheng|breakgfw|chengmingmag|jinpianwang|qi-gong|mhradio|edoors|renminbao|soundofhope|xizang-zhiye|bannedbook|ntdtv|12321|secretchina|dajiyuan|boxun|chinadigitaltimes|dwnews|huaglad|oneplusnews|epochweekly|cn.rfi).(cn|com|org|net|club|net|fr|tw|hk|eu|info|me)",
+                    "regexp:(..||)(visa|mycard|gash|beanfun|bank).",
+                    "regexp:(.*.||)(gov|12377|12315|talk.news.pts.org|creaders|zhuichaguoji|efcc.org|cyberpolice|aboluowang|tuidang|epochtimes|zhengjian|110.qq|mingjingnews|inmediahk|xinsheng|breakgfw|chengmingmag|jinpianwang|qi-gong|mhradio|edoors|renminbao|soundofhope|xizang-zhiye|bannedbook|ntdtv|12321|secretchina|dajiyuan|boxun|chinadigitaltimes|dwnews|huaglad|oneplusnews|epochweekly|cn.rfi).(cn|com|org|net|club|net|fr|tw|hk|eu|info|me)",
                     "regexp:(.*.||)(miaozhen|cnzz|talkingdata|umeng).(cn|com)",
                     "regexp:(.*.||)(mycard).(com|tw)",
                     "regexp:(.*.||)(gash).(com|tw)",
@@ -727,12 +750,12 @@ EOF
             "(.?)(xunlei|sandai|Thunder|XLLiveUD)(.)",
             "(..||)(dafahao|mingjinglive|botanwang|minghui|dongtaiwang|falunaz|epochtimes|ntdtv|falundafa|falungong|wujieliulan|zhengjian).(org|com|net)",
             "(ed2k|.torrent|peer_id=|announce|info_hash|get_peers|find_node|BitTorrent|announce_peer|announce.php?passkey=|magnet:|xunlei|sandai|Thunder|XLLiveUD|bt_key)",
-            "(.+.|^)(360|speedtest|fast).(cn|com|net)",
+            "(.+.|^)(360).(cn|com|net)",
             "(.*.||)(guanjia.qq.com|qqpcmgr|QQPCMGR)",
             "(.*.||)(rising|kingsoft|duba|xindubawukong|jinshanduba).(com|net|org)",
             "(.*.||)(netvigator|torproject).(com|cn|net|org)",
-            "(..||)(visa|mycard|gov|gash|beanfun|bank).",
-            "(.*.||)(gov|12377|12315|talk.news.pts.org|creaders|zhuichaguoji|efcc.org|cyberpolice|aboluowang|tuidang|epochtimes|nytimes|zhengjian|110.qq|mingjingnews|inmediahk|xinsheng|breakgfw|chengmingmag|jinpianwang|qi-gong|mhradio|edoors|renminbao|soundofhope|xizang-zhiye|bannedbook|ntdtv|12321|secretchina|dajiyuan|boxun|chinadigitaltimes|dwnews|huaglad|oneplusnews|epochweekly|cn.rfi).(cn|com|org|net|club|net|fr|tw|hk|eu|info|me)",
+            "(..||)(visa|mycard|gash|beanfun|bank).",
+            "(.*.||)(gov|12377|12315|talk.news.pts.org|creaders|zhuichaguoji|efcc.org|cyberpolice|aboluowang|tuidang|epochtimes|zhengjian|110.qq|mingjingnews|inmediahk|xinsheng|breakgfw|chengmingmag|jinpianwang|qi-gong|mhradio|edoors|renminbao|soundofhope|xizang-zhiye|bannedbook|ntdtv|12321|secretchina|dajiyuan|boxun|chinadigitaltimes|dwnews|huaglad|oneplusnews|epochweekly|cn.rfi).(cn|com|org|net|club|net|fr|tw|hk|eu|info|me)",
             "(.*.||)(miaozhen|cnzz|talkingdata|umeng).(cn|com)",
             "(.*.||)(mycard).(com|tw)",
             "(.*.||)(gash).(com|tw)",
