@@ -404,7 +404,7 @@ add_node_config() {
         7 ) NodeType="trojan" ;;
         * ) NodeType="shadowsocks" ;;
     esac
-    if [ $NodeType="vless" ];then
+    if [ $NodeType == "vless" ]; then
         read -rp "请选择是否为reality节点？(y/n)" isreality
     fi
     certmode="none"
@@ -422,10 +422,8 @@ add_node_config() {
                 2 ) certmode="dns" ;;
                 3 ) certmode="self" ;;
             esac
-            if [ $certmode == "http"] || [ $certmode == "dns"]; then
-                read -rp "请输入节点证书域名(example.com)]：" certdomain
-            fi
-            if [ $certmode != "http"]; then
+            read -rp "请输入节点证书域名(example.com)]：" certdomain
+            if [ $certmode != "http" ]; then
                 echo -e "${red}请手动修改配置文件后重启V2bX！${plain}"
             fi
         fi
