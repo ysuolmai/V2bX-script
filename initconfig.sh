@@ -66,7 +66,7 @@ add_node_config() {
             if [ $certmode == "http"] || [ $certmode == "dns"]; then
                 read -rp "请输入节点证书域名(example.com)]：" certdomain
             fi
-            if [ $certmode != "http"]
+            if [ $certmode != "http"]; then
                 echo -e "${red}请手动修改配置文件后重启V2bX！${plain}"
             fi
         fi
