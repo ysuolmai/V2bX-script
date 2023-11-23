@@ -409,7 +409,7 @@ add_node_config() {
     fi
     certmode="none"
     certdomain="example.com"
-    if [ "$isreality" != "y" ] || [ "$isreality" != "Y" ]; then
+    if [ "$isreality" != "y" ] && [ "$isreality" != "Y" ]; then
         read -rp "请选择是否进行TLS配置？(y/n)" istls
         if [ "$istls" == "y" ] || [ "$istls" == "Y" ]; then
             echo -e "${yellow}请选择证书申请模式：${plain}"
