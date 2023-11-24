@@ -197,7 +197,7 @@ generate_config_file() {
                 \"Timestamp\": true
             },
             \"NTP\": {
-                \"Enable\": true,
+                \"Enable\": false,
                 \"Server\": \"time.apple.com\",
                 \"ServerPort\": 0
             },
@@ -223,7 +223,7 @@ generate_config_file() {
                 \"Timestamp\": true
             },
             \"NTP\": {
-                \"Enable\": true,
+                \"Enable\": false,
                 \"Server\": \"time.apple.com\",
                 \"ServerPort\": 0
             },
