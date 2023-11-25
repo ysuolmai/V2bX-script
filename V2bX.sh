@@ -55,6 +55,15 @@ elif [[ x"${release}" == x"debian" ]]; then
     fi
 fi
 
+# 检查系统是否有 IPv6 地址
+check_ipv6_support() {
+    if ip -6 addr | grep -q "inet6"; then
+        echo "1"  # 支持 IPv6
+    else
+        echo "0"  # 不支持 IPv6
+    fi
+}
+
 confirm() {
     if [[ $# > 1 ]]; then
         echo && read -rp "$1 [默认$2]: " temp
@@ -428,6 +437,11 @@ add_node_config() {
             fi
         fi
     fi
+    ipv6_support=$(check_ipv6_support)
+    listen_ip="0.0.0.0"
+    if [ "$ipv6_support" -eq 1 ]; then
+        listen_ip="::"
+    fi
     node_config=""
     if [ "$core_type" == "1" ]; then 
     node_config=$(cat <<EOF
@@ -469,7 +483,7 @@ EOF
             "NodeID": $NodeID,
             "NodeType": "$NodeType",
             "Timeout": 30,
-            "ListenIP": "0.0.0.0",
+            "ListenIP": "$listen_ip",
             "SendIP": "0.0.0.0",
             "DeviceOnlineMinTraffic": 100,
             "TCPFastOpen": true,
