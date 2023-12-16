@@ -258,7 +258,7 @@ EOF
             "tag": "IPv4_out",
             "protocol": "freedom",
             "settings": {
-                "domainStrategy": "UseIPv4"
+                "domainStrategy": "UseIPv4v6"
             }
         },
         {
@@ -287,6 +287,13 @@ EOF
                     "geoip:private",
                     "geoip:cn"
                 ]
+            },
+            {
+                "domain": [
+                    "geosite:google"
+                ],
+                "outboundTag": "IPv4_out",
+                "type": "field"
             },
             {
                 "type": "field",
@@ -366,6 +373,12 @@ EOF
         "geoip": [
           "private"
         ]
+      },
+      {
+        "geosite": [
+          "google"
+        ],
+        "outbound": "direct"
       },
       {
         "geosite": [
