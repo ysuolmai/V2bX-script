@@ -222,7 +222,7 @@ generate_config_file() {
             if [[ "$continue_adding_node" =~ ^[Nn][Oo]? ]]; then
                 break
             elif [ "$fixed_api_info" = false ]; then
-                read -rp "请输入机场网址(https://example.com/)：" ApiHost
+                read -rp "请输入机场网址(https://example.com)：" ApiHost
                 read -rp "请输入面板对接API Key：" ApiKey
             fi
             add_node_config

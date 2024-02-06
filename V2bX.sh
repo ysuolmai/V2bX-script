@@ -420,7 +420,6 @@ add_node_config() {
             6 ) NodeType="trojan" ;;
             * ) NodeType="shadowsocks" ;;
         esac
-        fi
     fi
     if [ $NodeType == "vless" ]; then
         read -rp "请选择是否为reality节点？(y/n)" isreality
@@ -566,7 +565,7 @@ generate_config_file() {
     
     while true; do
         if [ "$first_node" = true ]; then
-            read -rp "请输入机场网址(https://example.com/)：" ApiHost
+            read -rp "请输入机场网址(https://example.com)：" ApiHost
             read -rp "请输入面板对接API Key：" ApiKey
             read -rp "是否设置固定的机场网址和API Key？(y/n)" fixed_api
             if [ "$fixed_api" = "y" ] || [ "$fixed_api" = "Y" ]; then
