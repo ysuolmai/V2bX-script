@@ -38,29 +38,31 @@ add_node_config() {
             echo "错误：请输入正确的数字作为Node ID。"
         fi
     done
-    
-    echo -e "${yellow}请选择节点传输协议：${plain}"
-    echo -e "${green}1. Shadowsocks${plain}"
-    echo -e "${green}2. Vless${plain}"
-    echo -e "${green}3. Vmess${plain}"
-    if [ "$core_sing" == true ]; then
-        echo -e "${green}4. Hysteria${plain}"
-        echo -e "${green}5. Hysteria2${plain}"
-    elif [ "$core_hysteria2" == true ]; then
-        echo -e "${green}5. Hysteria2${plain}"
-    fi
-    echo -e "${green}6. Trojan${plain}"
 
-    read -rp "请输入：" NodeType
-    case "$NodeType" in
-        1 ) NodeType="shadowsocks" ;;
-        2 ) NodeType="vless" ;;
-        3 ) NodeType="vmess" ;;
-        4 ) NodeType="hysteria" ;;
-        5 ) NodeType="hysteria2" ;;
-        6 ) NodeType="trojan" ;;
-        * ) NodeType="shadowsocks" ;;
-    esac
+    if [ "$core_hysteria2" == true ]; then
+        NodeType="hysteria2"
+    else
+        echo -e "${yellow}请选择节点传输协议：${plain}"
+        echo -e "${green}1. Shadowsocks${plain}"
+        echo -e "${green}2. Vless${plain}"
+        echo -e "${green}3. Vmess${plain}"
+        if [ "$core_sing" == true ]; then
+            echo -e "${green}4. Hysteria${plain}"
+            echo -e "${green}5. Hysteria2${plain}"
+        fi
+        echo -e "${green}6. Trojan${plain}"  
+        read -rp "请输入：" NodeType
+        case "$NodeType" in
+            1 ) NodeType="shadowsocks" ;;
+            2 ) NodeType="vless" ;;
+            3 ) NodeType="vmess" ;;
+            4 ) NodeType="hysteria" ;;
+            5 ) NodeType="hysteria2" ;;
+            6 ) NodeType="trojan" ;;
+            * ) NodeType="shadowsocks" ;;
+        esac
+        fi
+    fi
     if [ $NodeType == "vless" ]; then
         read -rp "请选择是否为reality节点？(y/n)" isreality
     fi
@@ -220,7 +222,7 @@ generate_config_file() {
             if [[ "$continue_adding_node" =~ ^[Nn][Oo]? ]]; then
                 break
             elif [ "$fixed_api_info" = false ]; then
-                read -rp "请输入机场网址：" ApiHost
+                read -rp "请输入机场网址(https://example.com/)：" ApiHost
                 read -rp "请输入面板对接API Key：" ApiKey
             fi
             add_node_config
