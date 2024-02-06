@@ -14,6 +14,7 @@ add_node_config() {
     echo -e "${green}请选择节点核心类型：${plain}"
     echo -e "${green}1. xray${plain}"
     echo -e "${green}2. singbox${plain}"
+    echo -e "${green}3. hysteria2${plain}"
     read -rp "请输入：" core_type
     if [ "$core_type" == "1" ]; then
         core="xray"
@@ -21,8 +22,11 @@ add_node_config() {
     elif [ "$core_type" == "2" ]; then
         core="sing"
         core_sing=true
+    elif [ "$core_type" == "3" ]; then
+        core="hysteria2"
+        core_hysteria2=true
     else
-        echo "无效的选择。请选择 1 或 2。"
+        echo "无效的选择。请选择 1 2 3。"
         continue
     fi
     while true; do
@@ -39,10 +43,14 @@ add_node_config() {
     echo -e "${green}1. Shadowsocks${plain}"
     echo -e "${green}2. Vless${plain}"
     echo -e "${green}3. Vmess${plain}"
-    echo -e "${green}4. Hysteria${plain}"
-    echo -e "${green}5. Hysteria2${plain}"
-    echo -e "${green}6. Tuic${plain}"
-    echo -e "${green}7. Trojan${plain}"
+    if [ "$core_sing" == true ]; then
+        echo -e "${green}4. Hysteria${plain}"
+        echo -e "${green}5. Hysteria2${plain}"
+    elif [ "$core_hysteria2" == true ]; then
+        echo -e "${green}5. Hysteria2${plain}"
+    fi
+    echo -e "${green}6. Trojan${plain}"
+
     read -rp "请输入：" NodeType
     case "$NodeType" in
         1 ) NodeType="shadowsocks" ;;
@@ -50,8 +58,7 @@ add_node_config() {
         3 ) NodeType="vmess" ;;
         4 ) NodeType="hysteria" ;;
         5 ) NodeType="hysteria2" ;;
-        6 ) NodeType="tuic" ;;
-        7 ) NodeType="trojan" ;;
+        6 ) NodeType="trojan" ;;
         * ) NodeType="shadowsocks" ;;
     esac
     if [ $NodeType == "vless" ]; then
@@ -145,6 +152,33 @@ EOF
         },
 EOF
 )
+    elif [ "$core_type" == "3" ]; then
+    node_config=$(cat <<EOF
+{
+            "Core": "$core",
+            "ApiHost": "$ApiHost",
+            "ApiKey": "$ApiKey",
+            "NodeID": $NodeID,
+            "NodeType": "$NodeType",
+            "Timeout": 30,
+            "ListenIP": "$listen_ip",
+            "SendIP": "0.0.0.0",
+            "DeviceOnlineMinTraffic": 100,
+            "CertConfig": {
+                "CertMode": "$certmode",
+                "RejectUnknownSni": false,
+                "CertDomain": "$certdomain",
+                "CertFile": "/etc/V2bX/fullchain.cer",
+                "KeyFile": "/etc/V2bX/cert.key",
+                "Email": "v2bx@github.com",
+                "Provider": "cloudflare",
+                "DNSEnv": {
+                    "EnvName": "env1"
+                }
+            }
+        },
+EOF
+)
     fi
     nodes_config+=("$node_config")
 }
@@ -166,6 +200,7 @@ generate_config_file() {
     first_node=true
     core_xray=false
     core_sing=false
+    core_hysteria2=false
     fixed_api_info=false
     check_api=false
     
@@ -192,58 +227,55 @@ generate_config_file() {
         fi
     done
 
-    # 根据核心类型生成 Cores
-    if [ "$core_xray" = true ] && [ "$core_sing" = true ]; then
-        cores_config="[
-        {
-            \"Type\": \"xray\",
-            \"Log\": {
-                \"Level\": \"error\",
-                \"ErrorPath\": \"/etc/V2bX/error.log\"
-            },
-            \"OutboundConfigPath\": \"/etc/V2bX/custom_outbound.json\",
-            \"RouteConfigPath\": \"/etc/V2bX/route.json\"
+    # 初始化核心配置数组
+    cores_config="["
+
+    # 检查并添加xray核心配置
+    if [ "$core_xray" = true ]; then
+        cores_config+="
+    {
+        \"Type\": \"xray\",
+        \"Log\": {
+            \"Level\": \"error\",
+            \"ErrorPath\": \"/etc/V2bX/error.log\"
         },
-        {
-            \"Type\": \"sing\",
-            \"Log\": {
-                \"Level\": \"error\",
-                \"Timestamp\": true
-            },
-            \"NTP\": {
-                \"Enable\": false,
-                \"Server\": \"time.apple.com\",
-                \"ServerPort\": 0
-            },
-            \"OriginalPath\": \"/etc/V2bX/sing_origin.json\"
-        }]"
-    elif [ "$core_xray" = true ]; then
-        cores_config="[
-        {
-            \"Type\": \"xray\",
-            \"Log\": {
-                \"Level\": \"error\",
-                \"ErrorPath\": \"/etc/V2bX/error.log\"
-            },
-            \"OutboundConfigPath\": \"/etc/V2bX/custom_outbound.json\",
-            \"RouteConfigPath\": \"/etc/V2bX/route.json\"
-        }]"
-    elif [ "$core_sing" = true ]; then
-        cores_config="[
-        {
-            \"Type\": \"sing\",
-            \"Log\": {
-                \"Level\": \"error\",
-                \"Timestamp\": true
-            },
-            \"NTP\": {
-                \"Enable\": false,
-                \"Server\": \"time.apple.com\",
-                \"ServerPort\": 0
-            },
-            \"OriginalPath\": \"/etc/V2bX/sing_origin.json\"
-        }]"
+        \"OutboundConfigPath\": \"/etc/V2bX/custom_outbound.json\",
+        \"RouteConfigPath\": \"/etc/V2bX/route.json\"
+    },"
     fi
+
+    # 检查并添加sing核心配置
+    if [ "$core_sing" = true ]; then
+        cores_config+="
+    {
+        \"Type\": \"sing\",
+        \"Log\": {
+            \"Level\": \"error\",
+            \"Timestamp\": true
+        },
+        \"NTP\": {
+            \"Enable\": false,
+            \"Server\": \"time.apple.com\",
+            \"ServerPort\": 0
+        },
+        \"OriginalPath\": \"/etc/V2bX/sing_origin.json\"
+    },"
+    fi
+
+    # 检查并添加hysteria2核心配置
+    if [ "$core_hysteria2" = true ]; then
+        cores_config+="
+    {
+        \"Type\": \"hysteria2\",
+        \"Log\": {
+            \"Level\": \"error\"
+        }
+    },"
+    fi
+
+    # 移除最后一个逗号并关闭数组
+    cores_config=$(echo "$cores_config" | sed 's/,$//')
+    cores_config+="]"
 
     # 切换到配置文件目录
     cd /etc/V2bX
