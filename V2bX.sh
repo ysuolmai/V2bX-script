@@ -521,7 +521,7 @@ EOF
             "NodeID": $NodeID,
             "NodeType": "$NodeType",
             "Timeout": 30,
-            "ListenIP": "$listen_ip",
+            "ListenIP": "",
             "SendIP": "0.0.0.0",
             "DeviceOnlineMinTraffic": 100,
             "CertConfig": {
