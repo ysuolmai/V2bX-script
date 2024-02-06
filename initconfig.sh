@@ -39,7 +39,7 @@ add_node_config() {
         fi
     done
 
-    if [ "$core_hysteria2" == true ]; then
+    if [ "$core_hysteria2" = true ] && [ "$core_xray" = false ] && [ "$core_sing" = false ]; then
         NodeType="hysteria2"
     else
         echo -e "${yellow}请选择节点传输协议：${plain}"
@@ -48,6 +48,9 @@ add_node_config() {
         echo -e "${green}3. Vmess${plain}"
         if [ "$core_sing" == true ]; then
             echo -e "${green}4. Hysteria${plain}"
+            echo -e "${green}5. Hysteria2${plain}"
+        fi
+        if [ "$core_hysteria2" == true ] && [ "$core_sing" = false ]; then
             echo -e "${green}5. Hysteria2${plain}"
         fi
         echo -e "${green}6. Trojan${plain}"  
