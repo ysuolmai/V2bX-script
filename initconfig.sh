@@ -61,7 +61,6 @@ add_node_config() {
             6 ) NodeType="trojan" ;;
             * ) NodeType="shadowsocks" ;;
         esac
-        fi
     fi
     if [ $NodeType == "vless" ]; then
         read -rp "请选择是否为reality节点？(y/n)" isreality
