@@ -523,6 +523,7 @@ EOF
             "ApiKey": "$ApiKey",
             "NodeID": $NodeID,
             "NodeType": "$NodeType",
+            "Hysteria2ConfigPath": "/etc/V2bX/hy2config.yaml",
             "Timeout": 30,
             "ListenIP": "",
             "SendIP": "0.0.0.0",
@@ -552,7 +553,7 @@ generate_config_file() {
     echo -e "${red}1. 目前该功能正处测试阶段${plain}"
     echo -e "${red}2. 生成的配置文件会保存到 /etc/V2bX/config.json${plain}"
     echo -e "${red}3. 原来的配置文件会保存到 /etc/V2bX/config.json.bak${plain}"
-    echo -e "${red}4. 目前不支持TLS${plain}"
+    echo -e "${red}4. 目前仅部分支持TLS${plain}"
     echo -e "${red}5. 使用此功能生成的配置文件会自带审计，确定继续？(y/n)${plain}"
     read -rp "请输入：" continue_prompt
     if [[ "$continue_prompt" =~ ^[Nn][Oo]? ]]; then
@@ -838,6 +839,28 @@ EOF
 }
 EOF
 
+    # 创建 hy2config.yaml 文件           
+    cat <<EOF > /etc/V2bX/hy2config.yaml
+quic:
+  initStreamReceiveWindow: 8388608
+  maxStreamReceiveWindow: 8388608
+  initConnReceiveWindow: 20971520
+  maxConnReceiveWindow: 20971520
+  maxIdleTimeout: 30s
+  maxIncomingStreams: 1024
+  disablePathMTUDiscovery: false
+ignoreClientBandwidth: false
+disableUDP: false
+udpIdleTimeout: 60s
+resolver:
+  type: system
+acl:
+  inline:
+    - reject(geosite:cn)
+    - reject(geoip:cn)
+masquerade:
+  type: 404
+EOF
     echo -e "${green}V2bX 配置文件生成完成，正在重新启动 V2bX 服务${plain}"
     restart 0
     before_show_menu

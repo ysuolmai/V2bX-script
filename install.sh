@@ -215,10 +215,6 @@ install_V2bX() {
             source initconfig.sh
             rm initconfig.sh -f
             generate_config_file
-            read -rp "是否安装bbr内核 ?(y/n): " if_install_bbr
-            if [[ $if_install_bbr == [Yy] ]]; then
-                install_bbr
-            fi
         fi
     fi
 }
