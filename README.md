@@ -9,7 +9,7 @@ Find the source code here: [InazumaV/V2bX](https://github.com/InazumaV/V2bX)
 
 # 详细使用教程
 
-[教程](https://crackair.gitbook.io/xrayr-project/)
+[教程](https://v2bx.v-50.me/)
 
 # 一键安装
 

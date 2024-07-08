@@ -885,6 +885,7 @@ resolver:
   type: system
 acl:
   inline:
+    - direct(geosite:google)
     - reject(geosite:cn)
     - reject(geoip:cn)
 masquerade:

@@ -153,7 +153,7 @@ install_V2bX() {
     if [[ ! -f /etc/V2bX/config.json ]]; then
         cp config.json /etc/V2bX/
         echo -e ""
-        echo -e "全新安装，请先参看教程：https://github.com/wyx2685/V2bX/tree/master/example，配置必要的内容"
+        echo -e "全新安装，请先参看教程：https://v2bx.v-50.me/，配置必要的内容"
         first_install=true
     else
         systemctl start V2bX
