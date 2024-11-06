@@ -424,28 +424,31 @@ add_node_config() {
             * ) NodeType="shadowsocks" ;;
         esac
     fi
-    if [ $NodeType == "vless" ]; then
+
+    if [ "$NodeType" == "vless" ]; then
         read -rp "请选择是否为reality节点？(y/n)" isreality
+    elif [ "$NodeType" == "hysteria2" ]; then
+        istls="y"
+    else
+        read -rp "请选择是否进行TLS配置？(y/n)" istls
     fi
+
     certmode="none"
     certdomain="example.com"
-    if [ "$isreality" != "y" ] && [ "$isreality" != "Y" ]; then
-        read -rp "请选择是否进行TLS配置？(y/n)" istls
-        if [ "$istls" == "y" ] || [ "$istls" == "Y" ]; then
-            echo -e "${yellow}请选择证书申请模式：${plain}"
-            echo -e "${green}1. http模式自动申请，节点域名已正确解析${plain}"
-            echo -e "${green}2. dns模式自动申请，需填入正确域名服务商API参数${plain}"
-            echo -e "${green}3. self模式，自签证书或提供已有证书文件${plain}"
-            read -rp "请输入：" certmode
-            case "$certmode" in
-                1 ) certmode="http" ;;
-                2 ) certmode="dns" ;;
-                3 ) certmode="self" ;;
-            esac
-            read -rp "请输入节点证书域名(example.com)]：" certdomain
-            if [ $certmode != "http" ]; then
-                echo -e "${red}请手动修改配置文件后重启V2bX！${plain}"
-            fi
+    if [[ "$isreality" != "y" && "$isreality" != "Y" && ( "$istls" == "y" || "$istls" == "Y" ) ]]; then
+        echo -e "${yellow}请选择证书申请模式：${plain}"
+        echo -e "${green}1. http模式自动申请，节点域名已正确解析${plain}"
+        echo -e "${green}2. dns模式自动申请，需填入正确域名服务商API参数${plain}"
+        echo -e "${green}3. self模式，自签证书或提供已有证书文件${plain}"
+        read -rp "请输入：" certmode
+        case "$certmode" in
+            1 ) certmode="http" ;;
+            2 ) certmode="dns" ;;
+            3 ) certmode="self" ;;
+        esac
+        read -rp "请输入节点证书域名(example.com)]：" certdomain
+        if [ "$certmode" != "http" ]; then
+            echo -e "${red}请手动修改配置文件后重启V2bX！${plain}"
         fi
     fi
     ipv6_support=$(check_ipv6_support)
