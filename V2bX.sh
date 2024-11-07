@@ -429,7 +429,9 @@ add_node_config() {
         read -rp "请选择是否为reality节点？(y/n)" isreality
     elif [ "$NodeType" == "hysteria2" ]; then
         istls="y"
-    else
+    fi
+
+    if [[ "$isreality" != "y" && "$isreality" != "Y" &&  "$istls" != "y" ]]; then
         read -rp "请选择是否进行TLS配置？(y/n)" istls
     fi
 
