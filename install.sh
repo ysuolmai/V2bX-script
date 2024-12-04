@@ -34,7 +34,7 @@ else
     echo -e "${red}未检测到系统版本，请联系脚本作者！${plain}\n" && exit 1
 fi
 
-arch=$(arch)
+arch=$(uname -m)
 
 if [[ $arch == "x86_64" || $arch == "x64" || $arch == "amd64" ]]; then
     arch="64"
