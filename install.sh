@@ -28,6 +28,8 @@ elif cat /proc/version | grep -Eqi "ubuntu"; then
     release="ubuntu"
 elif cat /proc/version | grep -Eqi "centos|red hat|redhat|rocky|alma|oracle linux"; then
     release="centos"
+elif cat /proc/version | grep -Eqi "arch"; then
+    release="arch"
 else
     echo -e "${red}未检测到系统版本，请联系脚本作者！${plain}\n" && exit 1
 fi
@@ -83,11 +85,20 @@ install_base() {
         yum install wget curl unzip tar crontabs socat -y
         yum install ca-certificates wget -y
         update-ca-trust force-enable
-    else
+    elif [[ x"${release}" == x"debian" ]]; then
         apt-get update -y
         apt install wget curl unzip tar cron socat -y
         apt-get install ca-certificates wget -y
         update-ca-certificates
+    elif [[ x"${release}" == x"ubuntu" ]]; then
+        apt-get update -y
+        apt install wget curl unzip tar cron socat -y
+        apt-get install ca-certificates wget -y
+        update-ca-certificates
+    elif [[ x"${release}" == x"arch" ]]; then
+        pacman -Sy
+        pacman -S --noconfirm --needed wget curl unzip tar cron socat
+        pacman -S --noconfirm --needed ca-certificates wget
     fi
 }
 
