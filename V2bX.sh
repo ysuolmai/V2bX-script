@@ -13,7 +13,6 @@ if [[ -f /etc/redhat-release ]]; then
     release="centos"
 elif cat /etc/issue | grep -Eqi "alpine"; then
     release="alpine"
-    echo -e "${red}脚本暂不支持alpine系统！${plain}\n" && exit 1
 elif cat /etc/issue | grep -Eqi "debian"; then
     release="debian"
 elif cat /etc/issue | grep -Eqi "ubuntu"; then
@@ -153,11 +152,17 @@ uninstall() {
         fi
         return 0
     fi
-    systemctl stop V2bX
-    systemctl disable V2bX
-    rm /etc/systemd/system/V2bX.service -f
-    systemctl daemon-reload
-    systemctl reset-failed
+    if [[ x"${release}" == x"alpine" ]]; then
+        service V2bX stop
+        rc-update del V2bX
+        rm /etc/init.d/V2bX -f
+    else
+        systemctl stop V2bX
+        systemctl disable V2bX
+        rm /etc/systemd/system/V2bX.service -f
+        systemctl daemon-reload
+        systemctl reset-failed
+    fi
     rm /etc/V2bX/ -rf
     rm /usr/local/V2bX/ -rf
 
@@ -176,7 +181,11 @@ start() {
         echo ""
         echo -e "${green}V2bX已运行，无需再次启动，如需重启请选择重启${plain}"
     else
-        systemctl start V2bX
+        if [[ x"${release}" == x"alpine" ]]; then
+            service V2bX start
+        else
+            systemctl start V2bX
+        fi
         sleep 2
         check_status
         if [[ $? == 0 ]]; then
@@ -192,7 +201,11 @@ start() {
 }
 
 stop() {
-    systemctl stop V2bX
+    if [[ x"${release}" == x"alpine" ]]; then
+        service V2bX stop
+    else
+        systemctl stop V2bX
+    fi
     sleep 2
     check_status
     if [[ $? == 1 ]]; then
@@ -207,7 +220,11 @@ stop() {
 }
 
 restart() {
-    systemctl restart V2bX
+    if [[ x"${release}" == x"alpine" ]]; then
+        service V2bX restart
+    else
+        systemctl restart V2bX
+    fi
     sleep 2
     check_status
     if [[ $? == 0 ]]; then
@@ -221,14 +238,22 @@ restart() {
 }
 
 status() {
-    systemctl status V2bX --no-pager -l
+    if [[ x"${release}" == x"alpine" ]]; then
+        service V2bX status
+    else
+        systemctl status V2bX --no-pager -l
+    fi
     if [[ $# == 0 ]]; then
         before_show_menu
     fi
 }
 
 enable() {
-    systemctl enable V2bX
+    if [[ x"${release}" == x"alpine" ]]; then
+        rc-update add V2bX
+    else
+        systemctl enable V2bX
+    fi
     if [[ $? == 0 ]]; then
         echo -e "${green}V2bX 设置开机自启成功${plain}"
     else
@@ -241,7 +266,11 @@ enable() {
 }
 
 disable() {
-    systemctl disable V2bX
+    if [[ x"${release}" == x"alpine" ]]; then
+        rc-update del V2bX
+    else
+        systemctl disable V2bX
+    fi
     if [[ $? == 0 ]]; then
         echo -e "${green}V2bX 取消开机自启成功${plain}"
     else
@@ -254,7 +283,11 @@ disable() {
 }
 
 show_log() {
-    journalctl -u V2bX.service -e --no-pager -f
+    if [[ x"${release}" == x"alpine" ]]; then
+        echo -e "${red}alpine系统暂不支持日志查看${plain}\n" && exit 1
+    else
+        journalctl -u V2bX.service -e --no-pager -f
+    fi
     if [[ $# == 0 ]]; then
         before_show_menu
     fi
@@ -278,23 +311,41 @@ update_shell() {
 
 # 0: running, 1: not running, 2: not installed
 check_status() {
-    if [[ ! -f /etc/systemd/system/V2bX.service ]]; then
+    if [[ ! -f /usr/local/V2bX/V2bX ]]; then
         return 2
     fi
-    temp=$(systemctl status V2bX | grep Active | awk '{print $3}' | cut -d "(" -f2 | cut -d ")" -f1)
-    if [[ x"${temp}" == x"running" ]]; then
-        return 0
+    if [[ x"${release}" == x"alpine" ]]; then
+        temp=$(service V2bX status | awk '{print $3}')
+        if [[ x"${temp}" == x"started" ]]; then
+            return 0
+        else
+            return 1
+        fi
     else
-        return 1
+        temp=$(systemctl status V2bX | grep Active | awk '{print $3}' | cut -d "(" -f2 | cut -d ")" -f1)
+        if [[ x"${temp}" == x"running" ]]; then
+            return 0
+        else
+            return 1
+        fi
     fi
 }
 
 check_enabled() {
-    temp=$(systemctl is-enabled V2bX)
-    if [[ x"${temp}" == x"enabled" ]]; then
-        return 0
+    if [[ x"${release}" == x"alpine" ]]; then
+        temp=$(rc-update show | grep V2bX)
+        if [[ x"${temp}" == x"" ]]; then
+            return 1
+        else
+            return 0
+        fi
     else
-        return 1;
+        temp=$(systemctl is-enabled V2bX)
+        if [[ x"${temp}" == x"enabled" ]]; then
+            return 0
+        else
+            return 1;
+        fi
     fi
 }
 

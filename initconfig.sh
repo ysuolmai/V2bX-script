@@ -490,7 +490,3 @@ EOF
     echo -e "${green}V2bX 配置文件生成完成,正在重新启动服务${plain}"
     v2bx restart
 }
-
-install_bbr() {
-    bash <(curl -L -s https://github.com/ylx2016/Linux-NetSpeed/raw/master/tcpx.sh)
-}
