@@ -27,11 +27,13 @@ elif cat /proc/version | grep -Eqi "ubuntu"; then
     release="ubuntu"
 elif cat /proc/version | grep -Eqi "centos|red hat|redhat|rocky|alma|oracle linux"; then
     release="centos"
+elif cat /proc/version | grep -Eqi "arch"; then
+    release="arch"
 else
     echo -e "${red}未检测到系统版本，请联系脚本作者！${plain}\n" && exit 1
 fi
 
-arch=$(arch)
+arch=$(uname -m)
 
 if [[ $arch == "x86_64" || $arch == "x64" || $arch == "amd64" ]]; then
     arch="64"
@@ -83,10 +85,19 @@ install_base() {
     elif [[ x"${release}" == x"alpine" ]]; then
         apk add wget curl unzip tar socat ca-certificates
         update-ca-certificates
-    else
+    elif [[ x"${release}" == x"debian" ]]; then
         apt-get update -y
         apt install wget curl unzip tar cron socat ca-certificates -y
         update-ca-certificates
+    elif [[ x"${release}" == x"ubuntu" ]]; then
+        apt-get update -y
+        apt install wget curl unzip tar cron socat -y
+        apt-get install ca-certificates wget -y
+        update-ca-certificates
+    elif [[ x"${release}" == x"arch" ]]; then
+        pacman -Sy
+        pacman -S --noconfirm --needed wget curl unzip tar cron socat
+        pacman -S --noconfirm --needed ca-certificates wget
     fi
 }
 
