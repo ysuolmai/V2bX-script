@@ -181,7 +181,6 @@ depend() {
 EOF
         chmod +x /etc/init.d/V2bX
         rc-update add V2bX default
-        rc-service V2bX start
         echo -e "${green}V2bX ${last_version}${plain} 安装完成，已设置开机自启"
     else
         rm /etc/systemd/system/V2bX.service -f

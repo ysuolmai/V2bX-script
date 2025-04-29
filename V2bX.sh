@@ -466,6 +466,9 @@ add_node_config() {
             echo -e "${green}5. Hysteria2${plain}"
         fi
         echo -e "${green}6. Trojan${plain}"  
+        if [ "$core_sing" == true ]; then
+            echo -e "${green}7. Tuic${plain}"
+        fi
         read -rp "请输入：" NodeType
         case "$NodeType" in
             1 ) NodeType="shadowsocks" ;;
@@ -474,6 +477,7 @@ add_node_config() {
             4 ) NodeType="hysteria" ;;
             5 ) NodeType="hysteria2" ;;
             6 ) NodeType="trojan" ;;
+            7 ) NodeType="tuic" ;;
             * ) NodeType="shadowsocks" ;;
         esac
     fi
