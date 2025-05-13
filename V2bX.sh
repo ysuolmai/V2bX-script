@@ -605,6 +605,8 @@ EOF
         },
 EOF
 )
+    fi
+    nodes_config+=("$node_config")
 }
 
 generate_config_file() {
