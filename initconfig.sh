@@ -69,10 +69,11 @@ add_node_config() {
             * ) NodeType="shadowsocks" ;;
         esac
     fi
-
+    fastopen=true
     if [ "$NodeType" == "vless" ]; then
         read -rp "请选择是否为reality节点？(y/n)" isreality
-    elif [ "$NodeType" == "hysteria2" ]; then
+    elif [ "$NodeType" == "hysteria" ] || [ "$NodeType" == "hysteria2" ] || [ "$NodeType" == "tuic" ]; then
+        fastopen=false
         istls="y"
     fi
 
@@ -93,7 +94,7 @@ add_node_config() {
             2 ) certmode="dns" ;;
             3 ) certmode="self" ;;
         esac
-        read -rp "请输入节点证书域名(example.com)]：" certdomain
+        read -rp "请输入节点证书域名(example.com)：" certdomain
         if [ "$certmode" != "http" ]; then
             echo -e "${red}请手动修改配置文件后重启V2bX！${plain}"
         fi
@@ -115,7 +116,7 @@ add_node_config() {
             "Timeout": 30,
             "ListenIP": "0.0.0.0",
             "SendIP": "0.0.0.0",
-            "DeviceOnlineMinTraffic": 1000,
+            "DeviceOnlineMinTraffic": 200,
             "EnableProxyProtocol": false,
             "EnableUot": true,
             "EnableTFO": true,
@@ -146,8 +147,8 @@ EOF
             "Timeout": 30,
             "ListenIP": "$listen_ip",
             "SendIP": "0.0.0.0",
-            "DeviceOnlineMinTraffic": 1000,
-            "TCPFastOpen": true,
+            "DeviceOnlineMinTraffic": 200,
+            "TCPFastOpen": $fastopen,
             "SniffEnabled": true,
             "CertConfig": {
                 "CertMode": "$certmode",
@@ -176,7 +177,7 @@ EOF
             "Timeout": 30,
             "ListenIP": "",
             "SendIP": "0.0.0.0",
-            "DeviceOnlineMinTraffic": 1000,
+            "DeviceOnlineMinTraffic": 200,
             "CertConfig": {
                 "CertMode": "$certmode",
                 "RejectUnknownSni": false,
