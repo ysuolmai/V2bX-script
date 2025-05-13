@@ -605,6 +605,7 @@ EOF
         },
 EOF
 )
+}
 
 generate_config_file() {
     echo -e "${yellow}V2bX 配置文件生成向导${plain}"
