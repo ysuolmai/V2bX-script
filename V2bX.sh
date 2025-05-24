@@ -468,6 +468,7 @@ add_node_config() {
         echo -e "${green}6. Trojan${plain}"  
         if [ "$core_sing" == true ]; then
             echo -e "${green}7. Tuic${plain}"
+            echo -e "${green}8. AnyTLS${plain}"
         fi
         read -rp "请输入：" NodeType
         case "$NodeType" in
@@ -478,13 +479,14 @@ add_node_config() {
             5 ) NodeType="hysteria2" ;;
             6 ) NodeType="trojan" ;;
             7 ) NodeType="tuic" ;;
+            8 ) NodeType="anytls" ;;
             * ) NodeType="shadowsocks" ;;
         esac
     fi
     fastopen=true
     if [ "$NodeType" == "vless" ]; then
         read -rp "请选择是否为reality节点？(y/n)" isreality
-    elif [ "$NodeType" == "hysteria" ] || [ "$NodeType" == "hysteria2" ] || [ "$NodeType" == "tuic" ]; then
+    elif [ "$NodeType" == "hysteria" ] || [ "$NodeType" == "hysteria2" ] || [ "$NodeType" == "tuic" ] || [ "$NodeType" == "anytls" ]; then
         fastopen=false
         istls="y"
     fi
