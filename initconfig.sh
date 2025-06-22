@@ -398,7 +398,11 @@ EOF
     ]
 }
 EOF
-
+    ipv6_support=$(check_ipv6_support)
+    dnsstrategy="ipv4_only"
+    if [ "$ipv6_support" -eq 1 ]; then
+        dnsstrategy="prefer_ipv4"
+    fi
     # 创建 sing_origin.json 文件
     cat <<EOF > /etc/V2bX/sing_origin.json
 {
@@ -407,7 +411,7 @@ EOF
       {
         "tag": "cf",
         "address": "1.1.1.1",
-        "strategy": "prefer_ipv4"
+        "strategy": "$dnsstrategy"
       }
     ]
   },
