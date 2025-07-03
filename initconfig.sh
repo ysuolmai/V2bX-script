@@ -410,10 +410,10 @@ EOF
     "servers": [
       {
         "tag": "cf",
-        "address": "1.1.1.1",
-        "strategy": "$dnsstrategy"
+        "address": "1.1.1.1"
       }
-    ]
+    ],
+    "strategy": "$dnsstrategy"
   },
   "outbounds": [
     {
