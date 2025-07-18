@@ -419,7 +419,10 @@ EOF
     {
       "tag": "direct",
       "type": "direct",
-      "domain_strategy": "prefer_ipv4"
+      "domain_resolver": {
+        "server": "cf",
+        "strategy": "$dnsstrategy"
+      }
     },
     {
       "type": "block",
