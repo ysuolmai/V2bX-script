@@ -184,8 +184,28 @@ EOF
         echo -e "${green}V2bX ${last_version}${plain} 安装完成，已设置开机自启"
     else
         rm /etc/systemd/system/V2bX.service -f
-        file="https://github.com/wyx2685/V2bX-script/raw/master/V2bX.service"
-        wget -q -N --no-check-certificate -O /etc/systemd/system/V2bX.service ${file}
+        cat <<EOF > /etc/systemd/system/V2bX.service
+[Unit]
+Description=V2bX Service
+After=network.target nss-lookup.target
+Wants=network.target
+
+[Service]
+User=root
+Group=root
+Type=simple
+LimitAS=infinity
+LimitRSS=infinity
+LimitCORE=infinity
+LimitNOFILE=999999
+WorkingDirectory=/usr/local/V2bX/
+ExecStart=/usr/local/V2bX/V2bX server
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
         systemctl daemon-reload
         systemctl stop V2bX
         systemctl enable V2bX
