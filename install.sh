@@ -2,7 +2,7 @@
 red='\033[0;31m' ; green='\033[0;32m' ; yellow='\033[0;33m' ; plain='\033[0m'
 cur_dir=$(pwd)
 
-# ---------------- 新增：参数解析（保持原版单参版本号的兼容） ----------------
+# ---------------- 新增：参数解析（兼容原版将第一个位置参数作为版本号） ----------------
 INSTANCE="${INSTANCE:-}"
 LEGACY_VERSION=""
 while [[ $# -gt 0 ]]; do
@@ -25,6 +25,7 @@ if [[ -z "$INSTANCE" ]]; then
   SERVICE_INITD="/etc/init.d/V2bX"
   SERVICE_SYSTEMD="/etc/systemd/system/V2bX.service"
   CLI_DEFAULT=true
+  CLI_NAME="v2bx"
 else
   BIN_DIR="/usr/local/V2bX${INSTANCE}"
   ETC_DIR="/etc/V2bX${INSTANCE}"
@@ -135,7 +136,7 @@ check_status() {
     temp=$(service ${SERVICE_BASE} status | awk '{print $3}')
     if [[ x"${temp}" == x"started" ]]; then return 0; else return 1; fi
   else
-    temp=$(systemctl status ${SERVICE_BASE} | grep Active | awk '{print $3}' | cut -d "(" -f2 | cut -d ")" -f1)
+    temp=$(systemctl status ${SERVICE_BASE} 2>/dev/null | grep Active | awk '{print $3}' | cut -d "(" -f2 | cut -d ")" -f1)
     if [[ x"${temp}" == x"running" ]]; then return 0; else return 1; fi
   fi
 }
@@ -182,14 +183,14 @@ install_V2bX() {
   cp geosite.dat ${ETC_DIR}/ 2>/dev/null
 
   if [[ x"${release}" == x"alpine" ]]; then
-    # OpenRC：按实例命名
+    # OpenRC：按实例命名，并显式指定配置文件
     rm -f ${SERVICE_INITD}
     cat > ${SERVICE_INITD} <<EOF
 #!/sbin/openrc-run
 name="${SERVICE_BASE}"
 description="${SERVICE_BASE}"
 command="${BIN_DIR}/V2bX"
-command_args="server"
+command_args="server -c ${ETC_DIR}/config.json"
 command_user="root"
 pidfile="/run/${SERVICE_BASE}.pid"
 command_background="yes"
@@ -199,7 +200,7 @@ EOF
     rc-update add ${SERVICE_BASE} default
     echo -e "${green}V2bX ${last_version}${plain} 安装完成，已设置开机自启"
   else
-    # systemd：按实例命名
+    # systemd：按实例命名，并显式指定配置文件
     rm -f ${SERVICE_SYSTEMD}
     cat > ${SERVICE_SYSTEMD} <<EOF
 [Unit]
@@ -216,7 +217,7 @@ LimitRSS=infinity
 LimitCORE=infinity
 LimitNOFILE=999999
 WorkingDirectory=${BIN_DIR}/
-ExecStart=${BIN_DIR}/V2bX server
+ExecStart=${BIN_DIR}/V2bX server -c ${ETC_DIR}/config.json
 Restart=always
 RestartSec=10
 
@@ -247,7 +248,7 @@ EOF
     if [[ $? == 0 ]]; then
       echo -e "${green}${SERVICE_BASE} 重启成功${plain}"
     else
-      echo -e "${red}${SERVICE_BASE} 可能启动失败，请稍后使用 ${CLI_DEFAULT:+V2bX}${CLI_DEFAULT:-${CLI_NAME}} log 查看日志信息，若无法启动，则可能更改了配置格式，请前往 wiki 查看：https://github.com/V2bX-project/V2bX/wiki${plain}"
+      echo -e "${red}${SERVICE_BASE} 可能启动失败，请使用日志命令查看并对照 wiki。${plain}"
     fi
     first_install=false
   fi
@@ -258,8 +259,9 @@ EOF
   [[ ! -f ${ETC_DIR}/custom_outbound.json ]] && cp custom_outbound.json ${ETC_DIR}/ 2>/dev/null
   [[ ! -f ${ETC_DIR}/custom_inbound.json ]] && cp custom_inbound.json ${ETC_DIR}/ 2>/dev/null
 
-  # 管理脚本（默认实例保留原作者 V2bX/v2bx；其他实例生成 v2bxN wrapper，不覆盖默认）
+  # ---------------- 管理脚本安装（关键改动点） ----------------
   if $CLI_DEFAULT ; then
+    # 默认实例：保持原样（上游脚本 + v2bx）
     curl -o /usr/bin/V2bX -Ls https://raw.githubusercontent.com/wyx2685/V2bX-script/master/V2bX.sh
     chmod +x /usr/bin/V2bX
     if [ ! -L /usr/bin/v2bx ]; then
@@ -267,22 +269,24 @@ EOF
       chmod +x /usr/bin/v2bx
     fi
   else
-    cat > /usr/bin/${CLI_NAME} <<EOF
-#!/bin/bash
-SVC="${SERVICE_BASE}"
-case "\$1" in
-  start)   systemctl start   "\$SVC" ;;
-  stop)    systemctl stop    "\$SVC" ;;
-  restart) systemctl restart "\$SVC" ;;
-  status)  systemctl status  "\$SVC" --no-pager -l ;;
-  enable)  systemctl enable  "\$SVC" ;;
-  disable) systemctl disable "\$SVC" ;;
-  log)     journalctl -u "\$SVC" -e --no-pager -f ;;
-  *)
-    echo "用法: ${CLI_NAME} {start|stop|restart|status|enable|disable|log}"
-    exit 1;;
-esac
-EOF
+    # 非默认实例：生成“完整版” v2bxN（上游脚本替换路径/服务名）
+    # 先清理旧的 v2bxN / V2bXN（满足“删除原来安装的 v2bx2”的需求）
+    rm -f /usr/bin/${CLI_NAME} /usr/bin/${SERVICE_BASE}
+
+    # 1) 拉取上游管理脚本
+    curl -o /usr/bin/${SERVICE_BASE} -Ls https://raw.githubusercontent.com/wyx2685/V2bX-script/master/V2bX.sh
+    chmod +x /usr/bin/${SERVICE_BASE}
+
+    # 2) 路径与服务名替换（尽量精确）
+    sed -i "s#/usr/local/V2bX#${BIN_DIR}#g"                 /usr/bin/${SERVICE_BASE}
+    sed -i "s#/etc/V2bX#${ETC_DIR}#g"                       /usr/bin/${SERVICE_BASE}
+    sed -i "s#V2bX\.service#${SERVICE_BASE}\.service#g"     /usr/bin/${SERVICE_BASE}
+    sed -i "s#SVC=\"V2bX\"#SVC=\"${SERVICE_BASE}\"#g"       /usr/bin/${SERVICE_BASE}
+    sed -i "s#SVC='V2bX'#SVC='${SERVICE_BASE}'#g"           /usr/bin/${SERVICE_BASE}
+    sed -i "s#\(systemctl \+\w\+ \+\)V2bX\( \|$\)#\1${SERVICE_BASE}\2#g" /usr/bin/${SERVICE_BASE}
+
+    # 3) 软链成 v2bxN
+    ln -sf /usr/bin/${SERVICE_BASE} /usr/bin/${CLI_NAME}
     chmod +x /usr/bin/${CLI_NAME}
   fi
 
@@ -296,7 +300,8 @@ EOF
     echo "V2bX - 显示管理菜单 (功能更多)"
     echo "V2bX start|stop|restart|status|enable|disable|log|x25519|generate|update|install|uninstall|version"
   else
-    echo "${CLI_NAME} start|stop|restart|status|enable|disable|log"
+    echo "${CLI_NAME} - 显示管理菜单 (与 v2bx 同款，只是作用于实例 ${INSTANCE})"
+    echo "${CLI_NAME} start|stop|restart|status|enable|disable|log|x25519|generate|update|install|uninstall|version"
   fi
   echo "------------------------------------------"
 
@@ -314,6 +319,4 @@ EOF
 
 echo -e "${green}开始安装${plain}"
 install_base
-# 注意：保持原版“最多接受一个位置参数作为版本号”的语义
-# 这里传入的 $LEGACY_VERSION 会在 install_V2bX() 内使用
 install_V2bX
